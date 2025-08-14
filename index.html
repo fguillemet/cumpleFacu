@@ -212,6 +212,17 @@ body::before{
 }
 </style>
 
+<style>
+/* --- Añadidos por ChatGPT: control de superposición y transparencia contextual --- */
+.card { position: relative; z-index: 2; }
+.balloons { z-index: 4; pointer-events: none; } /* encima, pero no captura el mouse */
+.hero { isolation: isolate; } /* limita mezclas dentro del contenedor de imagen */
+
+/* estado "atenuado" cuando pasan por elementos protegidos (texto, botones) */
+.balloons .b.fade-strong { opacity: 0.18 !important; }
+.balloons .b.fade-soft   { opacity: 0.38 !important; }
+
+</style>
 </head>
 <body>
   <div class="balloons" aria-hidden="true"></div>
@@ -323,6 +334,89 @@ body::before{
     root.style.animationPlayState = state;
     root.querySelectorAll('.b').forEach(b => b.style.animationPlayState = state);
   });
+})();
+</script>
+
+
+<script>
+// --- Añadidos por ChatGPT: transparencia contextual de globos ---
+// Fades balloons when overlapping protected content (.card text) and even more over text.
+// Lighter fade over images to simulate "transparencia" al pasar por encima.
+
+(function(){
+  const balloons = Array.from(document.querySelectorAll(".balloons .b"));
+  if (!balloons.length) return;
+
+  // Elementos "protegidos": todo lo textual de la tarjeta
+  const protectedZones = Array.from(document.querySelectorAll(".card, .card *"))
+    .filter(el => !(el.tagName === "IMG" || el.closest(".hero"))); // exceptúa imagen principal
+
+  // Zonas "imagen": imágenes que permiten ver globos más suaves (semi-transparentes)
+  const imageZones = Array.from(document.querySelectorAll(".hero img"));
+
+  // Utilidad para obtener rect (ignora elementos no visibles)
+  const visRect = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return null;
+    return r;
+  };
+
+  // Chequeo de solapamiento entre dos rectángulos
+  const overlaps = (a, b) => {
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  };
+
+  // Para performance, cacheamos rects "estáticos" (texto/imagen) y los
+  // actualizamos en resize o scroll
+  let protectedRects = [];
+  let imageRects = [];
+  const refreshStaticRects = () => {
+    protectedRects = protectedZones.map(visRect).filter(Boolean);
+    imageRects = imageZones.map(visRect).filter(Boolean);
+  };
+  refreshStaticRects();
+
+  let rafId;
+  const tick = () => {
+    // Recalcular rects de balloons (porque se animan con CSS)
+    for (const b of balloons) {
+      const br = visRect(b);
+      if (!br) continue;
+      let strong = false; // sobre texto
+      let soft = false;   // sobre imagen
+
+      // Si toca cualquier rect protegido (texto/botones), atenuación fuerte
+      for (const pr of protectedRects) {
+        if (overlaps(br, pr)) { strong = true; break; }
+      }
+
+      // Si no está sobre texto, pero toca imagen, atenuación leve
+      if (!strong) {
+        for (const ir of imageRects) {
+          if (overlaps(br, ir)) { soft = true; break; }
+        }
+      }
+
+      // Actualizamos clases sólo si cambió el estado
+      b.classList.toggle("fade-strong", strong);
+      b.classList.toggle("fade-soft", soft && !strong);
+    }
+
+    rafId = requestAnimationFrame(tick);
+  };
+
+  // Manejar resize/scroll
+  const onViewportChange = () => {
+    refreshStaticRects();
+  };
+  window.addEventListener("resize", onViewportChange, {passive: true});
+  window.addEventListener("scroll", onViewportChange, {passive: true});
+
+  // Arrancamos
+  rafId = requestAnimationFrame(tick);
+
+  // Limpieza si se navega
+  window.addEventListener("beforeunload", () => cancelAnimationFrame(rafId));
 })();
 </script>
 
