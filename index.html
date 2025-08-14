@@ -43,7 +43,7 @@
     background: rgba(0,0,0,0.25); /* sutil para que no haya recuadro oscuro fuerte */
     border: 1px solid rgba(255,255,255,0.12);
     backdrop-filter: blur(2px) saturate(110%);
-   position: relative; z-index: 2;  position: relative; z-index: 3;  position: relative; z-index: 3; }
+   position: relative; z-index: 2;  position: relative; z-index: 3.5;  position: relative; z-index: 3.5; }
   h1 {
     margin: 6px 6px 2px 6px;
     text-align: center;
@@ -126,7 +126,7 @@ body::before{
   background-size: 140px 200px,180px 240px,120px 180px,160px 220px,130px 190px,150px 210px,110px 170px,170px 230px;
   filter: saturate(1.05);
 }
-.card { position: relative; z-index: 1;  position: relative; z-index: 2;  position: relative; z-index: 3;  position: relative; z-index: 3; }
+.card { position: relative; z-index: 1;  position: relative; z-index: 2;  position: relative; z-index: 3.5;  position: relative; z-index: 3.5; }
 
 
 .balloons{
@@ -261,9 +261,61 @@ body::before{
 .balloons .b.fade-soft   { opacity: 0.38 !important; }
 
 </style>
+<style>
+/* === FESTIVO: Confeti cayendo === */
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3.5; /* detrás de los globos (z=4) para no tapar tanto */
+  overflow: visible;
+}
+.confetti .c {
+  position: absolute;
+  top: -8vh;
+  left: 0;
+  width: var(--w, 8px);
+  height: var(--h, 14px);
+  background: var(--c, #fff);
+  opacity: 0.95;
+  transform: translateX(0) rotate(0);
+  animation:
+    confetti-fall var(--d, 9s) linear var(--delay, 0s) infinite,
+    confetti-spin var(--sd, 2.4s) ease-in-out var(--delay, 0s) infinite alternate;
+  will-change: transform, top, opacity;
+  border-radius: 2px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.2);
+}
+/* Triángulos y círculos, mezclados */
+.confetti .c.t {
+  width: 0; height: 0;
+  border-left: calc(var(--w, 10px) / 2) solid transparent;
+  border-right: calc(var(--w, 10px) / 2) solid transparent;
+  border-bottom: var(--h, 12px) solid var(--c, #fff);
+  background: transparent;
+  border-radius: 0;
+}
+.confetti .c.o {
+  width: var(--w, 10px);
+  height: var(--w, 10px);
+  border-radius: 50%;
+}
+
+@keyframes confetti-fall {
+  0%   { top: -8vh; }
+  100% { top: 110vh; }
+}
+@keyframes confetti-spin {
+  0%   { transform: translateX(-10px) rotate(-20deg); }
+  100% { transform: translateX(10px) rotate(20deg); }
+}
+
+</style>
 </head>
 <body>
+<div class=\"confetti\" aria-hidden=\"true\"></div>
   <div class="balloons" aria-hidden="true"></div>
+<div class="confetti" aria-hidden="true"></div>
 
   <div class="balloons" aria-hidden="true">
   <img class="b" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgMTYwIDIyMCI+CiAgPGRlZnM+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImciIGN4PSI1MCUiIGN5PSI0MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwLjciLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI2MCUiIHN0b3AtY29sb3I9IiNmNDNmNWUiIHN0b3Atb3BhY2l0eT0iMSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNmNDNmNWUiIHN0b3Atb3BhY2l0eT0iMSIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzAiIHJ4PSI0OCIgcnk9IjYyIiBmaWxsPSJ1cmwoI2cpIiBzdHJva2U9InJnYmEoMCwwLDAsMC4yNSkiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxwYXRoIGQ9Ik04MCAxMzAgQzc2IDE1MCwgODYgMTYwLCA4MiAyMDAiIHN0cm9rZT0icmdiYSgwLDAsMCwwLjM1KSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIi8+CiAgPGNpcmNsZSBjeD0iODQiIGN5PSIxMjAiIHI9IjYiIGZpbGw9InJnYmEoMCwwLDAsMC4xNSkiLz4KPC9zdmc+" style="--x:45; --scale:0.88; --rot:10; --dur:18; --delay:3; --driftDur:6; --dx:7px; --drot:4;" alt="" />
@@ -449,6 +501,46 @@ body::before{
   window.addEventListener("scroll", refreshStaticRects, {passive:true});
   rafId = requestAnimationFrame(tick);
   window.addEventListener("beforeunload", () => cancelAnimationFrame(rafId));
+})();
+</script>
+
+
+<script>
+// === FESTIVO: Generador de Confeti ===
+(function(){
+  const container = document.querySelector(".confetti");
+  if (!container) return;
+
+  const COLORS = [
+    "#f43f5e","#f97316","#22c55e","#3b82f6","#a855f7",
+    "#eab308","#14b8a6","#ef4444","#06b6d4","#84cc16"
+  ];
+
+  const TOTAL = Math.min(160, Math.max(60, Math.floor(window.innerWidth / 6))); // bastante confeti
+  for (let i = 0; i < TOTAL; i++) {
+    const c = document.createElement("div");
+    const shapeRoll = Math.random();
+    c.className = "c" + (shapeRoll < 0.2 ? " t" : (shapeRoll < 0.4 ? " o" : ""));
+
+    // tamaños variables
+    const w = 6 + Math.random() * 10;   // ancho
+    const h = 8 + Math.random() * 18;   // alto
+    const x = Math.random() * 100;      // posición horizontal (vw)
+    const dur = 7 + Math.random() * 9;  // duración caída
+    const spin = 1.8 + Math.random() * 3.2; // oscilación/rotación
+    const delay = -Math.random() * dur; // para arrancar escalonados
+    const color = COLORS[i % COLORS.length];
+
+    c.style.setProperty("--w", `${w}px`);
+    c.style.setProperty("--h", `${h}px`);
+    c.style.setProperty("--d", `${dur}s`);
+    c.style.setProperty("--sd", `${spin}s`);
+    c.style.setProperty("--delay", `${delay}s`);
+    c.style.setProperty("--c", color);
+    c.style.left = `calc(${x}vw - var(--w) / 2)`;
+
+    container.appendChild(c);
+  }
 })();
 </script>
 
